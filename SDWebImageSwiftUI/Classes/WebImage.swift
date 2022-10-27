@@ -203,7 +203,7 @@ public struct WebImage : View {
     
     /// Image Manager status
     func setupManager() {
-        self.imageManager.successBlock = {  image, data, cacheType in
+        self.imageManager.willSuccessBlock = { image, data, cacheType in
             if self.imageHandler.shouldAnimateSuccessBlock?(image,data,cacheType) ?? false {
                 withAnimation {
                     self.imageManagerImage = image
@@ -211,9 +211,8 @@ public struct WebImage : View {
             } else {
                 self.imageManagerImage = image
             }
-            self.imageHandler.successBlock?(image,data,cacheType)
         }
-        
+        self.imageManager.successBlock = self.imageHandler.successBlock
         self.imageManager.failureBlock = self.imageHandler.failureBlock
         self.imageManager.progressBlock = self.imageHandler.progressBlock
         if imageModel.url != imageManager.currentURL {
@@ -247,9 +246,11 @@ public struct WebImage : View {
     
     /// Animated Image Support
     func setupPlayer() -> some View {
+        let imageToRender = imageManagerImage ?? imageManager.image
+
         let shouldResetPlayer: Bool
         // Image compare should use ===/!==, which is faster than isEqual:
-        if let animatedImage = imagePlayer.currentAnimatedImage, animatedImage !== imageManager.image! {
+        if let animatedImage = imagePlayer.currentAnimatedImage, animatedImage !== imageToRender! {
             shouldResetPlayer = true
         } else {
             shouldResetPlayer = false
@@ -260,7 +261,7 @@ public struct WebImage : View {
                 .id("\(imageModel.url!):\(imagePlayer.currentFrameIndex)")
             .onAppear {}
         } else {
-            return configure(image: imageManager.image!)
+            return configure(image: imageToRender!)
                 .id("\(imageModel.url!):\(imagePlayer.currentFrameIndex)")
             .onAppear {
                 if shouldResetPlayer {
@@ -271,7 +272,7 @@ public struct WebImage : View {
                     self.imagePlayer.currentFrameIndex = 0;
                     self.imagePlayer.currentLoopCount = 0;
                 }
-                if let animatedImage = imageManager.image as? PlatformImage & SDAnimatedImageProvider {
+                if let animatedImage = imageToRender as? PlatformImage & SDAnimatedImageProvider {
                     self.imagePlayer.customLoopCount = self.imageConfiguration.customLoopCount
                     self.imagePlayer.maxBufferSize = self.imageConfiguration.maxBufferSize
                     self.imagePlayer.runLoopMode = self.imageConfiguration.runLoopMode

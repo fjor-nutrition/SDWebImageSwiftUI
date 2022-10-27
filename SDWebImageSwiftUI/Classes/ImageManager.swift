@@ -29,6 +29,7 @@ public final class ImageManager : ObservableObject {
     weak var currentOperation: SDWebImageOperation? = nil
 
     var currentURL: URL?
+    var willSuccessBlock: ((PlatformImage, Data?, SDImageCacheType) -> Void)?
     var successBlock: ((PlatformImage, Data?, SDImageCacheType) -> Void)?
     var failureBlock: ((Error) -> Void)?
     var progressBlock: ((Int, Int) -> Void)?
@@ -76,6 +77,9 @@ public final class ImageManager : ObservableObject {
                 // Indicator modifier disapper and trigger `WebImage.body`
                 // So previous View struct call `onDisappear` and cancel the currentOperation
                 return
+            }
+            if let image = image {
+                self.willSuccessBlock?(image, data, cacheType)
             }
             self.image = image
             self.error = error
